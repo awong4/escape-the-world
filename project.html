@@ -1,0 +1,509 @@
+<html>
+<head>
+  <title>Alice Wong Final Project</title>
+ <style>
+        canvas {
+          display: block;
+          margin: 0;
+          overflow: hidden;
+          width: 100%;
+          height: 90%;
+
+        }
+        </style>
+        <script src="http://cs.wellesley.edu/~cs307/threejs/libs/three.min.js"></script>
+        <script src="http://cs.wellesley.edu/~cs307/threejs/libs/tw.js"></script>
+        <script src="http://cs.wellesley.edu/~cs307/threejs/libs/OrbitControls.js"></script>
+        <script src="http://cs.wellesley.edu/~cs307/threejs/libs/dat.gui.min.js"></script>
+        <script src="bridge.js"></script>
+        <script src="noface.js"></script>
+        <script src="fireflies.js"></script>
+        <script src="magician.js"></script>
+        <script src="wolf.js"></script>
+        <script src="fire.js"></script>
+        <script src="railroad.js"></script>
+        <script src="train.js"></script>
+        <script src="lamp.js"></script>
+      </head>
+      <body>
+
+       <script>
+//Note: I didn't have enough time to get around to everything so, 
+//I'm sorry for the poor comments and not
+//getting around to fixing everything you said in your feedback.
+//Also, I'm sorry for the bad programming practices like the hard
+//numbers used and the scaling used instead of changing the
+//actual numbers in my params in the js files.
+//======================= GLOBALS =====================
+var scene = new THREE.Scene();
+
+// ===================== GROUND =======================
+//Note: For some reason I had a lot of trouble trying to make
+//the repeating of textures a different number other than 1,1...
+//Function to create the ground
+//Input: none, Output: groundMesh
+function createGround(){
+  var groundGeom = new THREE.BoxGeometry(1500,800,2000);
+  var groundTexture = new THREE.ImageUtils.loadTexture("grass.jpg");
+  groundTexture.wrapS = THREE.MirroredRepeatWrapping;
+  groundTexture.wrapT = THREE.MirroredRepeatWrapping;
+  groundTexture.repeat.set(1,1);
+  var groundMaterial = new THREE.MeshBasicMaterial({color: 0x3f3f3f,
+    side: THREE.DoubleSide,//});
+    map: groundTexture});
+  var groundMesh = new THREE.Mesh(groundGeom, groundMaterial);
+  return groundMesh;
+}
+
+//Function to create water
+//Input: none, output water mesh
+function createWater(len, height, depth){
+    var waterGeom = new THREE.BoxGeometry(len, height, depth);
+  var waterTexture = new THREE.ImageUtils.loadTexture("water.jpg");
+  waterTexture.wrapS = THREE.MirroredRepeatWrapping;
+  waterTexture.wrapT = THREE.MirroredRepeatWrapping;
+  waterTexture.repeat.set(1,1);
+  var waterMaterial = new THREE.MeshPhongMaterial({color: 0x1E8EBF,
+    ambient: 0x1E8EBF,
+    specular: 0x1E8EBF,
+    shininess: 5,
+    side: THREE.DoubleSide,
+    transparent: true,
+    opacity:0.8,//});
+    map: waterTexture});
+  var waterMesh = new THREE.Mesh(waterGeom, waterMaterial);
+  return waterMesh;
+}
+
+var ground = createGround();
+  ground.position.set(0,-400,0);
+var groundBuilding = createGround();
+groundBuilding.position.set(2500,-400,0);
+var waterBridge = createWater(1000,600,2000);
+waterBridge.position.set(1250,-500, 0);
+var waterRest = createWater(4000, 600, 3000);
+waterRest.position.set(1250, -500, -2500);
+
+scene.add(ground); 
+scene.add(groundBuilding);
+scene.add(waterBridge);
+scene.add(waterRest);
+
+//====================== BRIDGE ======================
+var bridge = createBridge();
+bridge.position.set(700,0, -200);
+bridge.scale.set(5.5,5.5,5.5);
+scene.add(bridge);
+
+
+// ====================== FIRE =======================
+//Not really sure why it's so washed out :(
+//Object container created for the fire with logs
+var fire = new THREE.Object3D();
+
+var logs = makeLogsForFire(7);
+logs.position.set(-200,20,500);
+logs.scale.set(2,2,2);
+scene.add(logs);
+
+//Center flame
+var centerFlame = fireRing(1,1.25,1.25,3.5,0,0xFF0000);
+fire.add(centerFlame);
+
+//First outer ring
+var firstOuterFire = fireRing(8, 1, 1, 2.75, 35, 0xFF4E00);
+fire.add(firstOuterFire);
+
+//Second outer ring
+var secondOuterFire = fireRing(10, 1.5, 1.5,2,50,0xFF6C28);
+fire.add(secondOuterFire);
+
+fire.position.set(-200,0,500);
+fire.scale.set(2,2,2);
+scene.add(fire);
+// ============= NO FACE =================================
+
+var noFace = makeNoFace();
+noFace.scale.set(13, 13, 13);
+noFace.position.set(2000,200,0);
+noFace.rotation.y = Math.PI/2
+scene.add(noFace);
+
+// ======================= WOLF ========================
+
+
+var sceneWolf = createWolf();
+sceneWolf.position.set(300,0,550);
+sceneWolf.scale.set(3,3,3);
+sceneWolf.rotation.y = Math.PI/5;
+scene.add(sceneWolf);
+
+//================== FIREFLIES ======================
+
+var fireflies = createFireflies();
+scene.add(fireflies);
+
+//====================== MAGICIAN ==============================
+
+//Create a variable with the clown's parameters
+var clownParams =  {
+  sphereDetail: 10,
+  cylinderDetail: 10,
+  noseRadius: 0.4,
+  noseRotation: TW.degrees2radians(10),
+  earRadius: 1.5,
+  earScale: 1,
+  earAngle: Math.PI/4,
+  eyeRadius: 0.5,
+  eyeAngleX: -Math.PI/10,
+  eyeAngleY: +Math.PI/10,
+  armLength: 7,
+  armRadiusTop: 1,
+  armRadiusBottom: 1,
+  legRadiusTop: .8,
+  legRadiusBottom: .8,
+  legLength: 9,
+  legRotationX: -TW.degrees2radians(60),
+  legRotationZ: TW.degrees2radians(20),
+  hipWidth: 2.5,
+  hipHeight: -7,
+  headRadius: 5,
+  bodyRadius: 5,
+  bodyScaleY: 1.5,
+  bodyScaleX: 1.3,
+  shoulderWidth: 3,
+  shoulderHeight: 5,
+  shoulderRadius: 1,
+  connectorRadius: 2,
+  handRadius: 1.5,
+  footRadius: 2,
+  smileRadius: 40,
+  smileAngle: -Math.PI/2,
+  hatBaseRadius: 7,
+  hatBaseScale: .08,
+  hatBaseAngle: -Math.PI/20,
+  hatBottomRadius: 4,
+  hatTopRadius: 6,
+  hatPositionShift: 3.5,
+  hatPositionShift2: 7,
+  hatAngle: Math.PI,
+  hatLength: 7
+};
+
+//Create and and the clown to the scene
+var clown = createClown(clownParams);
+clown.scale.set(10,10,10);
+clown.position.set(-200,0,-300);
+clown.rotation.y = Math.PI/5;
+scene.add(clown);
+
+//================== MAGICIAN'S MAGIC BALLS ====================
+function createMagicBalls(){
+  var magicBallGeom = new THREE.SphereGeometry(50,15,15);
+  var magicBallMat = new THREE.MeshPhongMaterial({color: THREE.ColorKeywords.grey, 
+                      ambient: THREE.ColorKeywords.grey, 
+                      specular: THREE.ColorKeywords.grey, 
+                      shininess: 20, 
+                      emissive: 0x000000,
+                      transparent: true,
+                      opacity: 0.7});
+  var magicMesh = new THREE.Mesh(magicBallGeom, magicBallMat);
+  return magicMesh;
+}
+
+var ball1 = createMagicBalls();
+ball1.position.set(-0,100,-225);
+
+var ball2 = createMagicBalls();
+ball2.position.set(-200,100,-100);
+
+var ball3 = createMagicBalls();
+ball3.position.set(-350,100,-100);
+
+var ball4 = createMagicBalls();
+ball4.position.set(5,100,-400);
+
+var ball5 = createMagicBalls();
+ball5.position.set(-50,100,-100);
+
+scene.add(ball1);
+scene.add(ball2);
+scene.add(ball3);
+scene.add(ball4);
+scene.add(ball5);
+
+//====================== RAILROAD ==============================
+var railroad = createRailRoad();
+railroad.scale.set(5,5,3);
+railroad.position.set(2500,25,-3800);
+scene.add(railroad);
+
+//===================== TRAIN =================================
+var train = createTrain();
+train.scale.set(4.5,4.5,4.5);
+train.rotation.y=Math.PI*1.5;
+
+train.position.set(2750,115,0);
+scene.add(train);
+
+// ============== FLOATING LAMPS ===============================
+var glowLamp = makeGlowingLamp();
+glowLamp.scale.set(15,15,15);
+glowLamp.position.set(2000,300,-300);
+scene.add(glowLamp);
+
+var glowLamp1 = makeGlowingLamp();
+glowLamp1.scale.set(15,15,15);
+glowLamp1.position.set(2000,300,300);
+scene.add(glowLamp1);
+
+var glowLamp2 = makeGlowingLamp();
+glowLamp2.scale.set(15,15,15);
+glowLamp2.position.set(2000,300,-600);
+scene.add(glowLamp2);
+
+var glowLamp3 = makeGlowingLamp();
+glowLamp3.scale.set(15,15,15);
+glowLamp3.position.set(2000,300,600);
+scene.add(glowLamp3);
+
+
+// ============== LIGHTS =======================================
+var ambientLight = new THREE.AmbientLight(THREE.ColorKeywords.grey);
+scene.add(ambientLight);
+
+var directionalLight = new THREE.DirectionalLight(THREE.ColorKeywords.grey, 0.3);
+directionalLight.position.set(-300,0,550);
+scene.add(directionalLight);
+
+var directionalLight = new THREE.DirectionalLight(THREE.ColorKeywords.grey, 0.3);
+directionalLight.position.set(-200,0,0);
+scene.add(directionalLight);
+
+var pointLight = new THREE.PointLight(0xFFFF99, 2,1000);
+pointLight.position.set(-200,0,500);
+scene.add(pointLight);
+
+//These lights correspond by number to the lamps in the previous section
+var lampPointLight = new THREE.PointLight(0xFFFF99, 0.5,950);
+lampPointLight.position.set(2000,300,-300);
+scene.add(lampPointLight);
+
+var lampPointLight1 = new THREE.PointLight(0xFFFF99, 0.5,950);
+lampPointLight1.position.set(2000,300,300);
+scene.add(lampPointLight1);
+
+var lampPointLight2 = new THREE.PointLight(0xFFFF99, 0.3,950);
+lampPointLight2.position.set(2000,300,-600);
+scene.add(lampPointLight2);
+
+var lampPointLight3 = new THREE.PointLight(0xFFFF99, 0.3,950);
+lampPointLight3.position.set(2000,300,600);
+scene.add(lampPointLight3);
+
+
+
+// ============== RENDERER AND CAMERA ==========================
+var renderer = new THREE.WebGLRenderer();
+TW.mainInit(renderer,scene);
+renderer.setClearColor(0x182B7F, 0.6);
+
+var state = TW.cameraSetup(renderer,
+ scene,
+ {minx: 200, maxx: 2000,
+  miny: 100, maxy: 1000,
+  minz: -2000, maxz: 500});
+
+// =============== ANIMATIONS =====================================
+  var camera = state.cameraObject;
+  var deltaT = 0.05;
+  var time = 0;
+
+  var ballRadius = 50;
+  var ballHeight = 100;                 // of the center
+  var ballBouncePeriod = 150;            //in whatever units Time is measured in
+  var maxBallHeight = 360;               // of the center
+
+
+//From Scott Anderson
+function linearMap(x,minx,maxx,miny,maxy){
+      //Transforms x from [minx,maxx] to y in [miny,maxy]
+      //t is in [0,1]
+      t = (x-minx)/(maxx-minx);
+      y = t*(maxy-miny)+miny;
+      return y;
+      }
+
+//Adapted from Scott's bouncing ball
+function updatePosition(){
+      time += deltaT;
+      var angle = time * Math.PI / ballBouncePeriod; 
+      var abs_sin = Math.abs(Math.sin(angle));
+      ballHeight = linearMap(abs_sin,0,1,ballRadius, maxBallHeight);
+      return ballHeight;
+    }
+
+//Created for lamp animation
+  var lampLow = 200;               
+  var lampHeight = 200;               
+  var lampBouncePeriod = 150;            
+  var maxLampHeight = 300;            
+
+function lampUpdatePosition(start, finish){
+      time += deltaT;
+      var angle = time * Math.PI / lampBouncePeriod; 
+      var sin = Math.sin(angle);
+      lampHeight = linearMap(sin,start,finish,lampLow, maxLampHeight);
+      return lampHeight;
+    }
+
+//For No Face's turns
+  var turn = false;
+function noFaceAnimation(){
+      var position = noFace.position.x;
+
+    if(position < 2000 && turn == false) {
+      noFace.position.x++;
+    } else if (position > 1999 && turn == false) {
+      noFace.rotation.y = Math.PI*1.5;
+      turn = true;
+    } else if (turn == true && position > 600){
+      noFace.position.x--;
+    } else if (position < 601 && turn == true){
+      noFace.rotation.y = Math.PI/2;
+      turn = false;
+    }
+}
+
+function firefliesAnimation(){
+      var vertices = fireflies.geometry.vertices;
+
+    //For the fireflies moving in different directions
+    vertices.forEach(function(v){
+       v.y = v.y + (v.velocityY);
+       v.x = v.x - (v.velocityX);
+    
+       if(v.y<=0) v.y = 60;
+       if(v.x <= 0 || v.x >=100) v.velocityX = v.velocityX*-1;
+       if(v.z <= -20 || v.z >=20) v.velocityZ = v.velocityZ*-1;
+
+    });
+}
+
+//Fire animation
+var big = true;
+function fireAnimation(){
+  if(fire.scale.y < 2.5 && big == true){
+    fire.scale.y = fire.scale.y+0.005;
+  } else if (fire.scale.y > 2.4 && big == true){
+    big = false;
+  } else if (fire.scale.y > 2 && big == false){
+    fire.scale.y = fire.scale.y-0.005;
+  } else if(fire.scale.y < 2.1 && big == false){
+    big = true;
+  }
+}
+
+//Lamp animation
+function lampAnimation(){
+      glowLamp.position.y = lampUpdatePosition(1,0);
+    lampPointLight.position.y = lampUpdatePosition(1,0);
+    glowLamp3.position.y = lampUpdatePosition(1,0);
+    lampPointLight.position.y = lampUpdatePosition(1,0);
+
+    glowLamp2.position.y = lampUpdatePosition(0,1);
+    lampPointLight2.position.y = lampUpdatePosition(0,1);
+
+    glowLamp1.position.y = lampUpdatePosition(0,1);
+    lampPointLight1.position.y = lampUpdatePosition(0,1);
+}
+
+//Magic balls animation
+function magicBallAnimation(){
+    ball1.position.y = updatePosition();
+    ball2.position.y = updatePosition();
+    ball3.position.y = updatePosition();
+    ball4.position.y = updatePosition();
+    ball5.position.y = updatePosition();
+}
+
+function render(){
+    firefliesAnimation();
+
+    magicBallAnimation();
+
+    lampAnimation();
+
+    noFaceAnimation();
+
+    fireAnimation();
+
+    requestAnimationFrame(render);
+    renderer.render(scene,camera);
+}
+render();
+
+//======================== USER INTERACTION ===============================
+//Adapted from Kelsey's Steve WASD
+ function onKeyDown( event ) {
+  
+    switch ( event.keyCode ) {
+
+      case 38: // up  move forward
+      case 87: // w
+        //up = true;
+        directionVec.setZ(1);
+        break;
+
+      case 37: // left
+      case 65: // a
+        directionVec.setX(1);
+        break;
+
+      case 40: // down move backwards
+      case 83: // s
+        directionVec.setZ(-1);
+        break;
+
+      case 39: // right
+      case 68: // d
+        directionVec.setX(-1);
+        break;
+    }
+    
+  }
+  
+    //resets the direction vector to (0,0,0) so that steve does not move infinitely
+    function onKeyUp( event ) {
+    switch ( event.keyCode ) {
+
+      case 38: // up  move forward
+      case 87: // w
+        directionVec.setZ(0);
+        break;
+
+      case 37: // left
+      case 65: // a
+        directionVec.setX(0);
+        break;
+
+      case 40: // down move backwards
+      case 83: // s
+        directionVec.setZ(0);
+        break;
+
+      case 39: // right
+      case 68: // d
+        directionVec.setX(0);
+        break;
+
+    }
+  
+  }
+
+    document.addEventListener( 'keydown', onKeyDown, false );
+    document.addEventListener( 'keyup', onKeyUp, false );
+
+</script>
+</body>
+</html>
